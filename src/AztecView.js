@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactNative, {requireNativeComponent, ViewPropTypes, UIManager, ColorPropType, TouchableWithoutFeedback} from 'react-native';
+import ReactNative, {requireNativeComponent, UIManager, TouchableWithoutFeedback} from 'react-native';
+import { ColorPropType, ViewPropTypes } from 'deprecated-react-native-prop-types';
 
 const AztecManager = UIManager.RCTAztecView;
 
