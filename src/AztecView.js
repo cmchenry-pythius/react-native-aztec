@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import ReactNative, {requireNativeComponent, ViewPropTypes, UIManager, ColorPropType, TouchableWithoutFeedback} from 'react-native';
-import TextInputState from 'react-native/lib/TextInputState';
 
 const AztecManager = UIManager.RCTAztecView;
 
@@ -31,6 +30,12 @@ class AztecView extends React.Component {
     onCaretVerticalPositionChange: PropTypes.func,
     blockType: PropTypes.object,
     ...ViewPropTypes, // include the default view properties
+  }
+
+  constructor(props) {
+    super(props);
+    this.textInputRef = React.createRef();
+    this.state = { isFocused: false };
   }
 
   dispatch(command, params) {
@@ -107,7 +112,7 @@ class AztecView extends React.Component {
     if (!this.props.onHTMLContentWithCursor) {
       return;
     }
-    
+
     const text = event.nativeEvent.text;
     const selectionStart = event.nativeEvent.selectionStart;
     const selectionEnd = event.nativeEvent.selectionEnd;
@@ -116,6 +121,8 @@ class AztecView extends React.Component {
   }
 
   _onFocus = (event) => {
+    this.setState({ isFocused: true });
+
     if (!this.props.onFocus) {
       return;
     }
@@ -123,11 +130,12 @@ class AztecView extends React.Component {
     const { onFocus } = this.props;
     onFocus(event);
   }
-  
-  _onBlur = (event) => {
-    this.selectionEndCaretY = null;
-    TextInputState.blurTextInput(ReactNative.findNodeHandle(this));
 
+  _onBlur = (event) => {
+    this.setState({ isFocused: false });
+
+    this.selectionEndCaretY = null;
+    this.textInputRef?.current?.blur();
     if (!this.props.onBlur) {
       return;
     }
@@ -143,7 +151,7 @@ class AztecView extends React.Component {
       onSelectionChange( selectionStart, selectionEnd, text );
     }
 
-    if ( this.props.onCaretVerticalPositionChange && 
+    if ( this.props.onCaretVerticalPositionChange &&
       this.selectionEndCaretY != event.nativeEvent.selectionEndCaretY ) {
         const caretY = event.nativeEvent.selectionEndCaretY;
         this.props.onCaretVerticalPositionChange( event.target, caretY, this.selectionEndCaretY );
@@ -152,16 +160,15 @@ class AztecView extends React.Component {
   }
 
   blur = () => {
-    TextInputState.blurTextInput(ReactNative.findNodeHandle(this));
+    this.textInputRef?.current?.blur();
   }
 
   focus = () => {
-    TextInputState.focusTextInput(ReactNative.findNodeHandle(this));
+    this.textInputRef?.current?.focus();
   }
 
   isFocused = () => {
-    const focusedField = TextInputState.currentlyFocusedField();
-    return focusedField && ( focusedField === ReactNative.findNodeHandle(this) );
+    return this.state.isFocused;
   }
 
   _onPress = (event) => {
@@ -170,7 +177,7 @@ class AztecView extends React.Component {
   }
 
   render() {
-    const { onActiveFormatsChange, ...otherProps } = this.props    
+    const { onActiveFormatsChange, ...otherProps } = this.props
     return (
       <TouchableWithoutFeedback onPress={ this._onPress }>
         <RCTAztecView {...otherProps}
@@ -183,7 +190,7 @@ class AztecView extends React.Component {
           // IMPORTANT: the onFocus events are thrown away as these are handled by onPress() in the upper level.
           // It's necessary to do this otherwise onFocus may be set by `{...otherProps}` and thus the onPress + onFocus
           // combination generate an infinite loop as described in https://github.com/wordpress-mobile/gutenberg-mobile/issues/302
-          onFocus = { () => {} } 
+          onFocus = { () => {} }
           onBlur = { this._onBlur }
           onBackspace = { this._onBackspace }
         />
